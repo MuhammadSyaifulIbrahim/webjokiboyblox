@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ROLE {
+  USER
+  ADMIN
+}
+
+enum SERVER {
+  ASIA
+}
+
+enum PAYMENT_METHOD {
+  QRIS
+}
+
+enum PROCESSING_TIME {
+  NORMAL
+  CEPAT
+  KILAT
+}
+
+enum ORDER_STATUS {
+  PENDING
+  SELESAI
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  name      String
+  password  String
+  role      ROLE     @default(USER)
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Rank {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  rank_order       Int      @unique
+  price            Int
+  from_rank_orders Order[]  @relation(name: "from_rank")
+  to_rank_orders   Order[]  @relation(name: "to_rank")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ranks")
+}
+
+model Order {
+  id              String          @id @default(uuid())
+  no_invoice      String          @unique
+  phone           String
+  user_id         String
+  user            User            @relation(fields: [user_id], references: [id])
+  account         Account?
+  from_rank_id    String
+  from_rank       Rank            @relation(fields: [from_rank_id], references: [id], name: "from_rank")
+  to_rank_id      String
+  to_rank         Rank            @relation(fields: [to_rank_id], references: [id], name: "to_rank")
+  server          SERVER
+  processing_time PROCESSING_TIME
+  payment_method  PAYMENT_METHOD
+  payment_image   String?
+  total_payment   Int
+  order_status    ORDER_STATUS    @default(PENDING)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@map("orders")
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  username  String
+  password  String
+  order_id  String   @unique
+  order     Order    @relation(fields: [order_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts")
+}
